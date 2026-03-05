@@ -149,35 +149,39 @@ function ElevatorVolumeControl({
       </div>
       
       {/* Horizontal Building Track */}
-      <div className="relative h-14 mx-auto" style={{ width: '100%', maxWidth: '400px' }}>
-        {/* Building frame */}
-        <div className="building-track-horizontal">
+      <div className="relative mx-auto" style={{ width: '100%', maxWidth: '400px' }}>
+        {/* Building frame with button style */}
+        <div className="volume-track-container">
           {/* Floor lines vertical */}
           {[...Array(10)].map((_, i) => (
-            <div key={i} className="floor-line-vertical" style={{ left: `${(i + 1) * 10}%` }} />
+            <div key={i} className="floor-line-v" style={{ left: `${(i + 1) * 10}%` }} />
           ))}
+          
+          {/* Filled track */}
+          <div 
+            className="volume-fill"
+            style={{ width: `${volume * 100}%` }}
+          />
           
           {/* Clickable track */}
           <div 
-            className="elevator-track-horizontal"
+            className="volume-click-area"
             onClick={handleClick}
           >
             {/* Elevator car */}
             <div 
-              className="elevator-car-horizontal"
-              style={{ left: `${volume * 100 - 8}%` }}
+              className="volume-elevator-car"
+              style={{ left: `${volume * 100}%` }}
             >
-              <div className="elevator-doors-h">
-                <div className="door-line-h" />
-              </div>
+              <span className="car-number">{Math.round(volume * 15)}</span>
             </div>
           </div>
         </div>
         
         {/* Ground/ground label */}
-        <div className="flex justify-between mt-1 px-1">
-          <span className="text-[10px] font-mono text-amber-400/30">G</span>
-          <span className="text-[10px] font-mono text-amber-400/30">↑ TOP</span>
+        <div className="flex justify-between mt-2 px-1">
+          <span className="text-xs font-mono text-amber-400/60 font-bold">G</span>
+          <span className="text-xs font-mono text-amber-400/60 font-bold">TOP</span>
         </div>
       </div>
     </div>
@@ -215,28 +219,40 @@ export default function MusicPlayer() {
   const [isShuffle, setIsShuffle] = useState(false)
   const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off')
   
+  // Smart shuffle: track which songs have been played
+  const [playedTracks, setPlayedTracks] = useState<Set<number>>(new Set())
+  
   const audioRef = useRef<HTMLAudioElement>(null)
 
-  // Get next track based on shuffle/repeat
+  // Smart shuffle: get next track (each song plays once before reshuffling)
   const getNextTrack = useCallback(() => {
     if (isShuffle) {
-      let randomIndex
-      do {
-        randomIndex = Math.floor(Math.random() * ALBUM_DATA.tracks.length)
-      } while (randomIndex === ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id) && ALBUM_DATA.tracks.length > 1)
-      return ALBUM_DATA.tracks[randomIndex]
+      // Find tracks that haven't been played yet
+      const unplayedTracks = ALBUM_DATA.tracks.filter(t => !playedTracks.has(t.id))
+      
+      // If all tracks played, reset and start fresh
+      if (unplayedTracks.length === 0) {
+        const allTracks = [...ALBUM_DATA.tracks]
+        const randomIndex = Math.floor(Math.random() * allTracks.length)
+        setPlayedTracks(new Set([allTracks[randomIndex].id]))
+        return allTracks[randomIndex]
+      }
+      
+      // Pick random from unplayed
+      const randomIndex = Math.floor(Math.random() * unplayedTracks.length)
+      const nextTrack = unplayedTracks[randomIndex]
+      setPlayedTracks(prev => new Set([...prev, nextTrack.id]))
+      return nextTrack
     }
     const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
     const nextIndex = (currentIndex + 1) % ALBUM_DATA.tracks.length
     return ALBUM_DATA.tracks[nextIndex]
-  }, [currentTrack.id, isShuffle])
+  }, [currentTrack.id, isShuffle, playedTracks])
 
   const getPrevTrack = useCallback(() => {
     if (isShuffle) {
-      let randomIndex
-      do {
-        randomIndex = Math.floor(Math.random() * ALBUM_DATA.tracks.length)
-      } while (randomIndex === ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id) && ALBUM_DATA.tracks.length > 1)
+      // For prev in shuffle, just pick a random track (smart shuffle is forward-only logic)
+      const randomIndex = Math.floor(Math.random() * ALBUM_DATA.tracks.length)
       return ALBUM_DATA.tracks[randomIndex]
     }
     const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
@@ -285,7 +301,11 @@ export default function MusicPlayer() {
     setCurrentTrack(track)
     setIsPlaying(true)
     setIsLoading(true)
-  }, [])
+    // Mark as played in smart shuffle
+    if (isShuffle) {
+      setPlayedTracks(prev => new Set([...prev, track.id]))
+    }
+  }, [isShuffle])
 
   // Next/Previous track
   const nextTrack = useCallback(() => {
@@ -347,7 +367,14 @@ export default function MusicPlayer() {
     setIsPlaying(false)
   }, [])
 
-  const toggleShuffle = () => setIsShuffle(!isShuffle)
+  // Toggle smart shuffle
+  const toggleShuffle = () => {
+    if (!isShuffle) {
+      // Enable smart shuffle: reset played tracks and include current
+      setPlayedTracks(new Set([currentTrack.id]))
+    }
+    setIsShuffle(!isShuffle)
+  }
   
   const cycleRepeat = () => {
     setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off')
@@ -452,11 +479,11 @@ export default function MusicPlayer() {
 
             {/* Player Controls with Shuffle/Repeat */}
             <div className="flex items-center justify-center gap-3 mt-5">
-              {/* Shuffle */}
+              {/* Smart Shuffle */}
               <button 
                 onClick={toggleShuffle}
                 className={`p-3 rounded-full transition-all ${isShuffle ? 'bg-amber-600/30 text-amber-300' : 'text-amber-400/50 hover:text-amber-300'}`}
-                title="Shuffle"
+                title="Smart Shuffle (plays all songs once before repeating)"
               >
                 <ShuffleIcon className="w-6 h-6" />
               </button>

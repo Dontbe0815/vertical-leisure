@@ -125,7 +125,7 @@ function ElevatorButton({
   )
 }
 
-// Elevator Volume Control Component
+// Horizontal Elevator Volume Control
 function ElevatorVolumeControl({ 
   volume, 
   onVolumeChange 
@@ -135,51 +135,50 @@ function ElevatorVolumeControl({
 }) {
   const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect()
-    const y = rect.bottom - e.clientY // Invert: top is high volume
-    const percent = Math.max(0, Math.min(1, y / rect.height))
+    const x = e.clientX - rect.left
+    const percent = Math.max(0, Math.min(1, x / rect.width))
     onVolumeChange(percent)
   }, [onVolumeChange])
 
   return (
-    <div className="flex items-end gap-3">
-      {/* Vertical text */}
-      <div className="flex flex-col items-center justify-center h-full">
-        <span className="volume-text-vertical text-[10px] font-mono text-amber-400/50 tracking-widest">
-          VOLUME
+    <div className="w-full">
+      <div className="text-center mb-2">
+        <span className="text-xs font-mono text-amber-400/50 tracking-widest uppercase">
+          Volume Control
         </span>
       </div>
       
-      {/* Building with elevator */}
-      <div className="relative">
-        {/* Building outline */}
-        <div className="building-frame">
-          {/* Floor lines */}
-          {[...Array(8)].map((_, i) => (
-            <div key={i} className="floor-line" style={{ bottom: `${(i + 1) * 12.5}%` }} />
+      {/* Horizontal Building Track */}
+      <div className="relative h-14 mx-auto" style={{ width: '100%', maxWidth: '400px' }}>
+        {/* Building frame */}
+        <div className="building-track-horizontal">
+          {/* Floor lines vertical */}
+          {[...Array(10)].map((_, i) => (
+            <div key={i} className="floor-line-vertical" style={{ left: `${(i + 1) * 10}%` }} />
           ))}
           
-          {/* Elevator track */}
+          {/* Clickable track */}
           <div 
-            className="elevator-track"
+            className="elevator-track-horizontal"
             onClick={handleClick}
           >
             {/* Elevator car */}
             <div 
-              className="elevator-car"
-              style={{ bottom: `${volume * 100 - 15}%` }}
+              className="elevator-car-horizontal"
+              style={{ left: `${volume * 100 - 8}%` }}
             >
-              <div className="elevator-doors">
-                <div className="door-line" />
+              <div className="elevator-doors-h">
+                <div className="door-line-h" />
               </div>
             </div>
           </div>
-          
-          {/* Building roof */}
-          <div className="building-roof" />
         </div>
         
-        {/* Ground */}
-        <div className="building-ground" />
+        {/* Ground/ground label */}
+        <div className="flex justify-between mt-1 px-1">
+          <span className="text-[10px] font-mono text-amber-400/30">G</span>
+          <span className="text-[10px] font-mono text-amber-400/30">↑ TOP</span>
+        </div>
       </div>
     </div>
   )
@@ -368,7 +367,7 @@ export default function MusicPlayer() {
         preload="metadata"
       />
 
-      {/* Main Container - Bigger */}
+      {/* Main Container */}
       <div className="w-full max-w-6xl bg-gradient-to-b from-[#2a2015]/90 to-[#1a1510]/95 backdrop-blur-md rounded-3xl border-2 border-[#8b7355]/50 shadow-2xl overflow-hidden main-container">
         
         {/* Header */}
@@ -385,7 +384,7 @@ export default function MusicPlayer() {
           {/* Left Section: Album Art + Player Controls */}
           <div className="md:w-1/2 flex flex-col items-center justify-center">
             
-            {/* Album Cover - Bigger */}
+            {/* Album Cover */}
             <div 
               className="relative w-64 h-64 cursor-pointer group album-container mx-auto"
               onClick={() => setShowFrontCover(!showFrontCover)}
@@ -419,7 +418,7 @@ export default function MusicPlayer() {
               </div>
             </div>
 
-            {/* Now Playing - Bigger */}
+            {/* Now Playing */}
             <div className="w-full mt-6 text-center">
               <div className="flex items-center justify-center gap-4">
                 <span className="text-4xl font-mono font-bold text-amber-400 floor-number">
@@ -434,7 +433,7 @@ export default function MusicPlayer() {
               </div>
             </div>
 
-            {/* Progress Bar - Bigger */}
+            {/* Progress Bar */}
             <div className="w-full mt-5 max-w-md">
               <div 
                 className="relative h-3 bg-[#1a1510] rounded-full cursor-pointer overflow-hidden"
@@ -451,7 +450,7 @@ export default function MusicPlayer() {
               </div>
             </div>
 
-            {/* Player Controls - Bigger with Shuffle/Repeat */}
+            {/* Player Controls with Shuffle/Repeat */}
             <div className="flex items-center justify-center gap-3 mt-5">
               {/* Shuffle */}
               <button 
@@ -510,48 +509,44 @@ export default function MusicPlayer() {
             )}
           </div>
 
-          {/* Right Section: Elevator Panel + Volume */}
-          <div className="md:w-1/2 flex gap-6 items-stretch">
+          {/* Right Section: Elevator Panel */}
+          <div className="md:w-1/2 flex flex-col justify-center">
+            <h3 className="text-sm font-serif font-semibold text-amber-300/60 mb-5 text-center tracking-widest uppercase">
+              Select Floor
+            </h3>
             
-            {/* Floor Selection */}
-            <div className="flex-1 flex flex-col justify-center">
-              <h3 className="text-sm font-serif font-semibold text-amber-300/60 mb-5 text-center tracking-widest uppercase">
-                Select Floor
-              </h3>
-              
-              {/* Elevator Button Panel - Bigger */}
-              <div className="grid grid-cols-5 gap-4">
-                {ALBUM_DATA.tracks.map((track) => (
-                  <ElevatorButton 
-                    key={track.id}
-                    number={track.id}
-                    isActive={currentTrack.id === track.id}
-                    isPlaying={isPlaying}
-                    onClick={() => playTrack(track)}
-                  />
-                ))}
-              </div>
-
-              {/* Current Track Display */}
-              <div className="mt-6 text-center bg-[#1a1510]/60 rounded-xl py-3 px-5 border border-[#8b7355]/20">
-                <p className="text-sm text-amber-100">
-                  <span className="text-amber-400 font-semibold">Floor {currentTrack.id}</span>
-                  <span className="text-amber-400/40 mx-3">—</span>
-                  {currentTrack.title}
-                </p>
-              </div>
-
-              {/* Footer */}
-              <div className="mt-4 text-center">
-                <p className="text-xs text-amber-400/25">
-                  Elevator Atmospheres © {ALBUM_DATA.year}
-                </p>
-              </div>
+            {/* Elevator Button Panel */}
+            <div className="grid grid-cols-5 gap-4 max-w-md mx-auto w-full">
+              {ALBUM_DATA.tracks.map((track) => (
+                <ElevatorButton 
+                  key={track.id}
+                  number={track.id}
+                  isActive={currentTrack.id === track.id}
+                  isPlaying={isPlaying}
+                  onClick={() => playTrack(track)}
+                />
+              ))}
             </div>
 
-            {/* Elevator Volume Control */}
-            <div className="flex items-center">
+            {/* Current Track Display */}
+            <div className="mt-6 text-center bg-[#1a1510]/60 rounded-xl py-3 px-5 border border-[#8b7355]/20">
+              <p className="text-sm text-amber-100">
+                <span className="text-amber-400 font-semibold">Floor {currentTrack.id}</span>
+                <span className="text-amber-400/40 mx-3">—</span>
+                {currentTrack.title}
+              </p>
+            </div>
+
+            {/* Horizontal Volume Control */}
+            <div className="mt-5">
               <ElevatorVolumeControl volume={volume} onVolumeChange={setVolume} />
+            </div>
+
+            {/* Footer */}
+            <div className="mt-4 text-center">
+              <p className="text-xs text-amber-400/25">
+                Elevator Atmospheres © {ALBUM_DATA.year}
+              </p>
             </div>
           </div>
         </div>

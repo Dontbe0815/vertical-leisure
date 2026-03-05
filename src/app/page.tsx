@@ -68,11 +68,26 @@ function SkipForwardIcon({ className }: { className?: string }) {
   )
 }
 
-function VolumeIcon({ className, level }: { className?: string; level: number }) {
+function ShuffleIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
-      {level > 0.5 && <path d="M14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/>}
+      <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/>
+    </svg>
+  )
+}
+
+function RepeatIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4z"/>
+    </svg>
+  )
+}
+
+function RepeatOneIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M7 7h10v3l4-4-4-4v3H5v6h2V7zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2v4zm-4-2V9h-1l-2 1v1h1.5v4H13z"/>
     </svg>
   )
 }
@@ -110,6 +125,66 @@ function ElevatorButton({
   )
 }
 
+// Elevator Volume Control Component
+function ElevatorVolumeControl({ 
+  volume, 
+  onVolumeChange 
+}: { 
+  volume: number
+  onVolumeChange: (v: number) => void 
+}) {
+  const handleClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const y = rect.bottom - e.clientY // Invert: top is high volume
+    const percent = Math.max(0, Math.min(1, y / rect.height))
+    onVolumeChange(percent)
+  }, [onVolumeChange])
+
+  return (
+    <div className="flex items-end gap-3">
+      {/* Vertical text */}
+      <div className="flex flex-col items-center justify-center h-full">
+        <span className="volume-text-vertical text-[10px] font-mono text-amber-400/50 tracking-widest">
+          VOLUME
+        </span>
+      </div>
+      
+      {/* Building with elevator */}
+      <div className="relative">
+        {/* Building outline */}
+        <div className="building-frame">
+          {/* Floor lines */}
+          {[...Array(8)].map((_, i) => (
+            <div key={i} className="floor-line" style={{ bottom: `${(i + 1) * 12.5}%` }} />
+          ))}
+          
+          {/* Elevator track */}
+          <div 
+            className="elevator-track"
+            onClick={handleClick}
+          >
+            {/* Elevator car */}
+            <div 
+              className="elevator-car"
+              style={{ bottom: `${volume * 100 - 15}%` }}
+            >
+              <div className="elevator-doors">
+                <div className="door-line" />
+              </div>
+            </div>
+          </div>
+          
+          {/* Building roof */}
+          <div className="building-roof" />
+        </div>
+        
+        {/* Ground */}
+        <div className="building-ground" />
+      </div>
+    </div>
+  )
+}
+
 // Animated Background
 function AnimatedBackground() {
   return (
@@ -138,8 +213,37 @@ export default function MusicPlayer() {
   const [audioError, setAudioError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [showFrontCover, setShowFrontCover] = useState(true)
+  const [isShuffle, setIsShuffle] = useState(false)
+  const [repeatMode, setRepeatMode] = useState<'off' | 'all' | 'one'>('off')
   
   const audioRef = useRef<HTMLAudioElement>(null)
+
+  // Get next track based on shuffle/repeat
+  const getNextTrack = useCallback(() => {
+    if (isShuffle) {
+      let randomIndex
+      do {
+        randomIndex = Math.floor(Math.random() * ALBUM_DATA.tracks.length)
+      } while (randomIndex === ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id) && ALBUM_DATA.tracks.length > 1)
+      return ALBUM_DATA.tracks[randomIndex]
+    }
+    const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
+    const nextIndex = (currentIndex + 1) % ALBUM_DATA.tracks.length
+    return ALBUM_DATA.tracks[nextIndex]
+  }, [currentTrack.id, isShuffle])
+
+  const getPrevTrack = useCallback(() => {
+    if (isShuffle) {
+      let randomIndex
+      do {
+        randomIndex = Math.floor(Math.random() * ALBUM_DATA.tracks.length)
+      } while (randomIndex === ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id) && ALBUM_DATA.tracks.length > 1)
+      return ALBUM_DATA.tracks[randomIndex]
+    }
+    const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
+    const prevIndex = currentIndex === 0 ? ALBUM_DATA.tracks.length - 1 : currentIndex - 1
+    return ALBUM_DATA.tracks[prevIndex]
+  }, [currentTrack.id, isShuffle])
 
   // Update audio source when track changes
   useEffect(() => {
@@ -186,20 +290,16 @@ export default function MusicPlayer() {
 
   // Next/Previous track
   const nextTrack = useCallback(() => {
-    const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
-    const nextIndex = (currentIndex + 1) % ALBUM_DATA.tracks.length
     setProgress(0)
     setAudioError(null)
-    setCurrentTrack(ALBUM_DATA.tracks[nextIndex])
-  }, [currentTrack.id])
+    setCurrentTrack(getNextTrack())
+  }, [getNextTrack])
 
   const prevTrack = useCallback(() => {
-    const currentIndex = ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id)
-    const prevIndex = currentIndex === 0 ? ALBUM_DATA.tracks.length - 1 : currentIndex - 1
     setProgress(0)
     setAudioError(null)
-    setCurrentTrack(ALBUM_DATA.tracks[prevIndex])
-  }, [currentTrack.id])
+    setCurrentTrack(getPrevTrack())
+  }, [getPrevTrack])
 
   // Event handlers
   const handleTimeUpdate = useCallback(() => {
@@ -223,8 +323,17 @@ export default function MusicPlayer() {
   }, [duration])
 
   const handleEnded = useCallback(() => {
-    nextTrack()
-  }, [nextTrack])
+    if (repeatMode === 'one') {
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0
+        audioRef.current.play().catch(() => {})
+      }
+    } else if (repeatMode === 'all' || ALBUM_DATA.tracks.findIndex(t => t.id === currentTrack.id) < ALBUM_DATA.tracks.length - 1) {
+      nextTrack()
+    } else {
+      setIsPlaying(false)
+    }
+  }, [repeatMode, currentTrack.id, nextTrack])
 
   const handleCanPlay = useCallback(() => {
     setIsLoading(false)
@@ -239,8 +348,14 @@ export default function MusicPlayer() {
     setIsPlaying(false)
   }, [])
 
+  const toggleShuffle = () => setIsShuffle(!isShuffle)
+  
+  const cycleRepeat = () => {
+    setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off')
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-6">
       <AnimatedBackground />
       
       <audio
@@ -253,34 +368,34 @@ export default function MusicPlayer() {
         preload="metadata"
       />
 
-      {/* Main Container */}
-      <div className="w-full max-w-4xl bg-gradient-to-b from-[#2a2015]/90 to-[#1a1510]/95 backdrop-blur-md rounded-2xl border-2 border-[#8b7355]/50 shadow-2xl overflow-hidden main-container">
+      {/* Main Container - Bigger */}
+      <div className="w-full max-w-6xl bg-gradient-to-b from-[#2a2015]/90 to-[#1a1510]/95 backdrop-blur-md rounded-3xl border-2 border-[#8b7355]/50 shadow-2xl overflow-hidden main-container">
         
         {/* Header */}
-        <div className="text-center py-3 px-4 border-b border-[#8b7355]/30">
-          <h1 className="text-2xl md:text-3xl font-serif font-bold tracking-[0.15em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 album-title">
+        <div className="text-center py-5 px-6 border-b border-[#8b7355]/30">
+          <h1 className="text-3xl md:text-4xl font-serif font-bold tracking-[0.2em] text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-200 album-title">
             {ALBUM_DATA.title}
           </h1>
-          <p className="text-sm italic text-amber-300/60 mt-1">{ALBUM_DATA.subtitle}</p>
+          <p className="text-base italic text-amber-300/60 mt-2">{ALBUM_DATA.subtitle}</p>
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col md:flex-row">
+        <div className="flex flex-col md:flex-row p-6 gap-6">
           
           {/* Left Section: Album Art + Player Controls */}
-          <div className="md:w-2/5 p-5 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-[#8b7355]/30">
+          <div className="md:w-1/2 flex flex-col items-center justify-center">
             
-            {/* Album Cover */}
+            {/* Album Cover - Bigger */}
             <div 
-              className="relative w-44 h-44 cursor-pointer group album-container mx-auto"
+              className="relative w-64 h-64 cursor-pointer group album-container mx-auto"
               onClick={() => setShowFrontCover(!showFrontCover)}
             >
-              <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-[#a08060] via-[#8b7355] to-[#5a4a3a] p-1 shadow-xl">
-                <div className="absolute inset-0 rounded-lg brass-frame" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#a08060] via-[#8b7355] to-[#5a4a3a] p-1.5 shadow-xl">
+                <div className="absolute inset-0 rounded-xl brass-frame" />
               </div>
               
               <div 
-                className="relative m-1.5 rounded overflow-hidden aspect-square album-art-container"
+                className="relative m-2 rounded-lg overflow-hidden aspect-square album-art-container"
                 style={{ transform: showFrontCover ? 'rotateY(0deg)' : 'rotateY(180deg)' }}
               >
                 <div className="absolute inset-0 album-front">
@@ -299,128 +414,144 @@ export default function MusicPlayer() {
                 </div>
               </div>
               
-              <div className="absolute bottom-1 right-1 bg-black/60 px-2 py-0.5 rounded text-[10px] text-amber-200/70">
-                Flip
+              <div className="absolute bottom-2 right-2 bg-black/60 px-3 py-1 rounded-full text-xs text-amber-200/70">
+                Click to flip
               </div>
             </div>
 
-            {/* Now Playing */}
-            <div className="w-full mt-4 text-center">
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-2xl font-mono font-bold text-amber-400 floor-number">
+            {/* Now Playing - Bigger */}
+            <div className="w-full mt-6 text-center">
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-4xl font-mono font-bold text-amber-400 floor-number">
                   {String(currentTrack.id).padStart(2, '0')}
                 </span>
                 <div className="text-left">
-                  <h2 className="text-base font-serif font-semibold text-amber-100 leading-tight">
+                  <h2 className="text-xl font-serif font-semibold text-amber-100 leading-tight">
                     {currentTrack.title}
                   </h2>
-                  <p className="text-xs text-amber-400/50">{ALBUM_DATA.artist}</p>
+                  <p className="text-sm text-amber-400/50 mt-1">{ALBUM_DATA.artist}</p>
                 </div>
               </div>
             </div>
 
-            {/* Progress Bar */}
-            <div className="w-full mt-4">
+            {/* Progress Bar - Bigger */}
+            <div className="w-full mt-5 max-w-md">
               <div 
-                className="relative h-1.5 bg-[#1a1510] rounded-full cursor-pointer overflow-hidden"
+                className="relative h-3 bg-[#1a1510] rounded-full cursor-pointer overflow-hidden"
                 onClick={handleSeek}
               >
                 <div 
-                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full"
+                  className="absolute inset-y-0 left-0 bg-gradient-to-r from-amber-600 to-amber-400 rounded-full transition-all"
                   style={{ width: duration ? `${(progress / duration) * 100}%` : '0%' }}
                 />
               </div>
-              <div className="flex justify-between mt-1 text-xs text-amber-400/50 font-mono">
+              <div className="flex justify-between mt-2 text-sm text-amber-400/50 font-mono">
                 <span>{formatTime(progress)}</span>
                 <span>{currentTrack.duration}</span>
               </div>
             </div>
 
-            {/* Player Controls */}
-            <div className="flex items-center justify-center gap-3 mt-3">
+            {/* Player Controls - Bigger with Shuffle/Repeat */}
+            <div className="flex items-center justify-center gap-3 mt-5">
+              {/* Shuffle */}
               <button 
-                onClick={prevTrack}
-                className="p-2 text-amber-400/70 hover:text-amber-300 transition-colors"
+                onClick={toggleShuffle}
+                className={`p-3 rounded-full transition-all ${isShuffle ? 'bg-amber-600/30 text-amber-300' : 'text-amber-400/50 hover:text-amber-300'}`}
+                title="Shuffle"
               >
-                <SkipBackIcon className="w-5 h-5" />
+                <ShuffleIcon className="w-6 h-6" />
               </button>
               
+              {/* Previous */}
+              <button 
+                onClick={prevTrack}
+                className="p-3 text-amber-400/70 hover:text-amber-300 transition-colors"
+              >
+                <SkipBackIcon className="w-7 h-7" />
+              </button>
+              
+              {/* Play/Pause */}
               <button 
                 onClick={togglePlay}
                 disabled={isLoading}
-                className="p-3.5 bg-gradient-to-br from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 rounded-full text-white shadow-lg hover:shadow-amber-500/30 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50"
+                className="p-5 bg-gradient-to-br from-amber-500 to-amber-700 hover:from-amber-400 hover:to-amber-600 rounded-full text-white shadow-lg hover:shadow-amber-500/30 transition-all transform hover:scale-105 active:scale-95 disabled:opacity-50"
               >
                 {isLoading ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : isPlaying ? (
-                  <PauseIcon className="w-5 h-5" />
+                  <PauseIcon className="w-8 h-8" />
                 ) : (
-                  <PlayIcon className="w-5 h-5" />
+                  <PlayIcon className="w-8 h-8" />
                 )}
               </button>
               
+              {/* Next */}
               <button 
                 onClick={nextTrack}
-                className="p-2 text-amber-400/70 hover:text-amber-300 transition-colors"
+                className="p-3 text-amber-400/70 hover:text-amber-300 transition-colors"
               >
-                <SkipForwardIcon className="w-5 h-5" />
+                <SkipForwardIcon className="w-7 h-7" />
+              </button>
+              
+              {/* Repeat */}
+              <button 
+                onClick={cycleRepeat}
+                className={`p-3 rounded-full transition-all ${repeatMode !== 'off' ? 'bg-amber-600/30 text-amber-300' : 'text-amber-400/50 hover:text-amber-300'}`}
+                title={repeatMode === 'off' ? 'Repeat All' : repeatMode === 'all' ? 'Repeat One' : 'Repeat Off'}
+              >
+                {repeatMode === 'one' ? <RepeatOneIcon className="w-6 h-6" /> : <RepeatIcon className="w-6 h-6" />}
               </button>
             </div>
 
-            {/* Volume */}
-            <div className="flex items-center gap-2 mt-3 w-28">
-              <VolumeIcon className="w-4 h-4 text-amber-400/50" level={volume} />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.01"
-                value={volume}
-                onChange={(e) => setVolume(parseFloat(e.target.value))}
-                className="flex-1 h-1 bg-[#1a1510] rounded-full appearance-none cursor-pointer volume-slider"
-              />
-            </div>
-
             {audioError && (
-              <div className="mt-2 p-2 bg-red-900/30 border border-red-700/50 rounded text-red-300 text-[10px] text-center">
+              <div className="mt-4 p-3 bg-red-900/30 border border-red-700/50 rounded-lg text-red-300 text-sm text-center max-w-md">
                 {audioError}
               </div>
             )}
           </div>
 
-          {/* Right Section: Elevator Panel */}
-          <div className="md:w-3/5 p-5 flex flex-col justify-center">
-            <h3 className="text-xs font-serif font-semibold text-amber-300/60 mb-4 text-center tracking-widest uppercase">
-              Select Floor
-            </h3>
+          {/* Right Section: Elevator Panel + Volume */}
+          <div className="md:w-1/2 flex gap-6 items-stretch">
             
-            {/* Elevator Button Panel - 3 rows of 5 */}
-            <div className="grid grid-cols-5 gap-4 w-full max-w-md mx-auto">
-              {ALBUM_DATA.tracks.map((track) => (
-                <ElevatorButton 
-                  key={track.id}
-                  number={track.id}
-                  isActive={currentTrack.id === track.id}
-                  isPlaying={isPlaying}
-                  onClick={() => playTrack(track)}
-                />
-              ))}
+            {/* Floor Selection */}
+            <div className="flex-1 flex flex-col justify-center">
+              <h3 className="text-sm font-serif font-semibold text-amber-300/60 mb-5 text-center tracking-widest uppercase">
+                Select Floor
+              </h3>
+              
+              {/* Elevator Button Panel - Bigger */}
+              <div className="grid grid-cols-5 gap-4">
+                {ALBUM_DATA.tracks.map((track) => (
+                  <ElevatorButton 
+                    key={track.id}
+                    number={track.id}
+                    isActive={currentTrack.id === track.id}
+                    isPlaying={isPlaying}
+                    onClick={() => playTrack(track)}
+                  />
+                ))}
+              </div>
+
+              {/* Current Track Display */}
+              <div className="mt-6 text-center bg-[#1a1510]/60 rounded-xl py-3 px-5 border border-[#8b7355]/20">
+                <p className="text-sm text-amber-100">
+                  <span className="text-amber-400 font-semibold">Floor {currentTrack.id}</span>
+                  <span className="text-amber-400/40 mx-3">—</span>
+                  {currentTrack.title}
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 text-center">
+                <p className="text-xs text-amber-400/25">
+                  Elevator Atmospheres © {ALBUM_DATA.year}
+                </p>
+              </div>
             </div>
 
-            {/* Current Track Display */}
-            <div className="mt-5 text-center bg-[#1a1510]/60 rounded-lg py-2.5 px-4 border border-[#8b7355]/20">
-              <p className="text-xs text-amber-100">
-                <span className="text-amber-400 font-semibold">Floor {currentTrack.id}</span>
-                <span className="text-amber-400/40 mx-2">—</span>
-                {currentTrack.title}
-              </p>
-            </div>
-
-            {/* Footer */}
-            <div className="mt-4 text-center">
-              <p className="text-[10px] text-amber-400/25">
-                Elevator Atmospheres © {ALBUM_DATA.year}
-              </p>
+            {/* Elevator Volume Control */}
+            <div className="flex items-center">
+              <ElevatorVolumeControl volume={volume} onVolumeChange={setVolume} />
             </div>
           </div>
         </div>

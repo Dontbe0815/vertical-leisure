@@ -552,7 +552,6 @@ export default function MusicPlayer() {
   const [waitTime, setWaitTime] = useState(0)
   const [isEmergencyStop, setIsEmergencyStop] = useState(false)
   const [prevVolume, setPrevVolume] = useState(0.8)
-  const [isServiceMode, setIsServiceMode] = useState(false)
   const [showMiniWidget, setShowMiniWidget] = useState(false)
   const [showEndFact, setShowEndFact] = useState(false)
   const [endFact, setEndFact] = useState("")
@@ -797,21 +796,6 @@ export default function MusicPlayer() {
 
   const toggleShuffle = () => { hapticFeedback(); if (!isShuffle) setPlayedTracks(new Set([currentTrack.id])); setIsShuffle(!isShuffle) }
   const cycleRepeat = () => { hapticFeedback(); setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off') }
-
-  if (isServiceMode) {
-    return (
-      <div className="service-elevator-mode">
-        <div className="service-header"><span className="service-label">SERVICE ELEVATOR</span><button onClick={() => setIsServiceMode(false)} className="service-exit">✕</button></div>
-        <div className="service-content">
-          <div className="service-floor-display"><span className="service-floor-number">{String(currentTrack.id).padStart(2, '0')}</span></div>
-          <div className="service-track-name">{currentTrack.title}</div>
-          <div className="service-controls"><button onClick={prevTrack} className="service-btn">◀</button><button onClick={togglePlay} className="service-btn main">{isPlaying ? '⏸' : '▶'}</button><button onClick={nextTrack} className="service-btn">▶</button></div>
-          <div className="service-progress"><div className="service-progress-fill" style={{ width: duration ? `${(progress / duration) * 100}%` : '0%' }} /></div>
-          <div className="service-footer"><span>VERTICAL LEISURE</span><span>{formatTime(progress)} / {currentTrack.duration}</span></div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">

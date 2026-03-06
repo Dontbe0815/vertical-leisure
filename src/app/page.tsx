@@ -584,6 +584,7 @@ export default function MusicPlayer() {
   const [waitTime, setWaitTime] = useState(0)
   const [isEmergencyStop, setIsEmergencyStop] = useState(false)
   const [prevVolume, setPrevVolume] = useState(0.8)
+  const [isServiceMode, setIsServiceMode] = useState(false)
   const [showMiniWidget, setShowMiniWidget] = useState(false)
   const [showEndFact, setShowEndFact] = useState(false)
   const [endFact, setEndFact] = useState("")
@@ -760,6 +761,7 @@ export default function MusicPlayer() {
         case 'ArrowLeft': prevTrack(); break
         case 'ArrowRight': nextTrack(); break
         case 'KeyM': handleEmergencyStop(); break
+        case 'KeyS': setIsServiceMode(prev => !prev); break
         case 'KeyW': setShowMiniWidget(prev => !prev); break
         case 'KeyB': toggleBassBoost(); break
         case 'KeyC': setCrtEffect(prev => !prev); break
@@ -833,6 +835,21 @@ export default function MusicPlayer() {
   const toggleShuffle = () => { hapticFeedback(); if (!isShuffle) setPlayedTracks(new Set([currentTrack.id])); setIsShuffle(!isShuffle) }
   const cycleRepeat = () => { hapticFeedback(); setRepeatMode(prev => prev === 'off' ? 'all' : prev === 'all' ? 'one' : 'off') }
 
+  if (isServiceMode) {
+    return (
+      <div className="service-elevator-mode">
+        <div className="service-header"><span className="service-label">SERVICE ELEVATOR</span><button onClick={() => setIsServiceMode(false)} className="service-exit">✕</button></div>
+        <div className="service-content">
+          <div className="service-floor-display"><span className="service-floor-number">{String(currentTrack.id).padStart(2, '0')}</span></div>
+          <div className="service-track-name">{currentTrack.title}</div>
+          <div className="service-controls"><button onClick={prevTrack} className="service-btn">◀</button><button onClick={togglePlay} className="service-btn main">{isPlaying ? '⏸' : '▶'}</button><button onClick={nextTrack} className="service-btn">▶</button></div>
+          <div className="service-progress"><div className="service-progress-fill" style={{ width: duration ? `${(progress / duration) * 100}%` : '0%' }} /></div>
+          <div className="service-footer"><span>VERTICAL LEISURE</span><span>{formatTime(progress)} / {currentTrack.duration}</span></div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <div className="fixed inset-0 -z-10 floor-background" style={{ backgroundImage: `url("${currentTrack.floorImage}")` }}><div className="absolute inset-0 bg-gradient-to-b from-[#1a1510]/70 via-[#1a1510]/50 to-[#1a1510]/80" /></div>
@@ -867,7 +884,8 @@ export default function MusicPlayer() {
       
       {showMiniWidget && <div className="fixed top-20 right-4 z-50"><MiniWidgetPlayer currentTrack={currentTrack} isPlaying={isPlaying} onPlayPause={togglePlay} onNext={nextTrack} onPrev={prevTrack} progress={progress} duration={duration} isEmergencyStop={isEmergencyStop} onEmergencyStop={handleEmergencyStop} /></div>}
       
-
+      <button onClick={() => setIsServiceMode(true)} className="fixed top-4 left-4 z-50 p-2 bg-[#2a2015]/80 border border-[#8b7355]/50 rounded-lg text-amber-400/60 hover:text-amber-300 transition-all" title="Service Elevator Mode (S)"><ServiceModeIcon className="w-5 h-5" /></button>
+      
       
       {/* (17) Share Card */}
       {showShareCard && <ShareCard currentTrack={currentTrack} isPlaying={isPlaying} onClose={() => setShowShareCard(false)} />}
@@ -935,7 +953,7 @@ export default function MusicPlayer() {
               <div className="text-center py-2"><p className="text-[10px] text-amber-400/40 italic leading-relaxed">💡 {currentFact}</p></div>
             </div>
             <div className="mt-3"><ElevatorVolumeControl volume={volume} onVolumeChange={setVolume} /></div>
-            <div className="mt-3 text-center"><p className="text-[10px] text-amber-400/25">Elevator Atmospheres © {ALBUM_DATA.year}</p><p className="text-[10px] text-amber-400/20 mt-1">⌨️ Space: Play | ←→: Skip | B: Bass | C: CRT | W: Widget | M: Mute</p></div>
+            <div className="mt-3 text-center"><p className="text-[10px] text-amber-400/25">Elevator Atmospheres © {ALBUM_DATA.year}</p><p className="text-[10px] text-amber-400/20 mt-1">⌨️ Space: Play | ←→: Skip | B: Bass | C: CRT | S: Service | W: Widget | M: Mute</p></div>
           </div>
         </div>
       </div>

@@ -1178,7 +1178,7 @@ html {
   }
 
   /* Track info */
-  .main-container .text-center.bg-\\[\\#1a1510\\]\\/60 {
+  .main-container .text-center.p-2 {
     padding: 8px 12px;
   }
 

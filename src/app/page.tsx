@@ -141,6 +141,115 @@ function EmergencyStopIcon({ className }: { className?: string }) {
   )
 }
 
+// (1) Pulsierende Floor-Anzeige Component
+function PulsingFloorDisplay({ floor, isPlaying }: { floor: number; isPlaying: boolean }) {
+  return (
+    <div className={`pulsing-floor-display ${isPlaying ? 'active' : ''}`}>
+      <span className="floor-number-large">
+        {String(floor).padStart(2, '0')}
+      </span>
+      <div className="floor-label">FLOOR</div>
+    </div>
+  )
+}
+
+// (2) Retro LCD Display Component
+function RetroLCDDisplay({ text, isPlaying }: { text: string; isPlaying: boolean }) {
+  const [displayText, setDisplayText] = useState(text)
+  
+  useEffect(() => {
+    setDisplayText(text)
+  }, [text])
+  
+  return (
+    <div className="retro-lcd-container">
+      <div className="lcd-screen">
+        <div className="lcd-scanlines" />
+        <div className={`lcd-text ${isPlaying ? 'scrolling' : ''}`}>
+          <span>{displayText}</span>
+          {isPlaying && <span className="lcd-cursor">_</span>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// (3) Audio Visualizer Component - Decorative animated bars
+function AudioVisualizer({ isPlaying }: { isPlaying: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const animationRef = useRef<number | null>(null)
+  
+  useEffect(() => {
+    if (!canvasRef.current) return
+    
+    const canvas = canvasRef.current
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    
+    const draw = () => {
+      const width = canvas.width
+      const height = canvas.height
+      
+      ctx.clearRect(0, 0, width, height)
+      
+      const time = Date.now() / 1000
+      const barCount = 32
+      const barWidth = width / barCount - 2
+      
+      for (let i = 0; i < barCount; i++) {
+        let barHeight: number
+        
+        if (isPlaying) {
+          // Active visualization - more dynamic
+          const baseHeight = 8
+          const variation = Math.sin(time * 4 + i * 0.5) * 12 + Math.sin(time * 2 + i * 0.3) * 8
+          barHeight = baseHeight + variation + Math.random() * 4
+        } else {
+          // Idle animation - gentle waves
+          barHeight = Math.sin(time * 2 + i * 0.3) * 5 + 8
+        }
+        
+        const x = i * (barWidth + 2)
+        const y = height - barHeight
+        
+        // Gradient for bars
+        const gradient = ctx.createLinearGradient(0, height, 0, y)
+        if (isPlaying) {
+          gradient.addColorStop(0, 'rgba(251, 191, 36, 0.8)')
+          gradient.addColorStop(1, 'rgba(251, 191, 36, 0.3)')
+        } else {
+          gradient.addColorStop(0, 'rgba(251, 191, 36, 0.4)')
+          gradient.addColorStop(1, 'rgba(251, 191, 36, 0.1)')
+        }
+        
+        ctx.fillStyle = gradient
+        ctx.fillRect(x, y, barWidth, barHeight)
+      }
+      
+      animationRef.current = requestAnimationFrame(draw)
+    }
+    
+    draw()
+    
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current)
+      }
+    }
+  }, [isPlaying])
+  
+  return (
+    <div className="audio-visualizer-container">
+      <canvas 
+        ref={canvasRef} 
+        width={300} 
+        height={40}
+        className="audio-visualizer-canvas"
+      />
+    </div>
+  )
+}
+
 // Elevator Button Component
 function ElevatorButton({ 
   number, 
@@ -279,6 +388,16 @@ function ElevatorVolumeControl({
   )
 }
 
+// (14) End-of-Track Fact Display
+function EndOfTrackFact({ fact, show }: { fact: string; show: boolean }) {
+  return (
+    <div className={`end-of-track-fact ${show ? 'visible' : ''}`}>
+      <div className="fact-icon">💡</div>
+      <div className="fact-text">{fact}</div>
+    </div>
+  )
+}
+
 // Main Player Component
 export default function MusicPlayer() {
   const [currentTrack, setCurrentTrack] = useState(ALBUM_DATA.tracks[0])
@@ -302,9 +421,64 @@ export default function MusicPlayer() {
   const [isEmergencyStop, setIsEmergencyStop] = useState(false)
   const [prevVolume, setPrevVolume] = useState(0.8)
   
+  // (14) End of track fact state
+  const [showEndFact, setShowEndFact] = useState(false)
+  const [endFact, setEndFact] = useState("")
+  
   const audioRef = useRef<HTMLAudioElement>(null)
   const audioContextRef = useRef<AudioContext | null>(null)
   const waitTimeRef = useRef<NodeJS.Timeout | null>(null)
+
+  // (4) Door sound using Web Audio API
+  const playDoorSound = useCallback((open: boolean) => {
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)()
+      }
+      const ctx = audioContextRef.current
+      
+      // Create a more complex door sound
+      const oscillator1 = ctx.createOscillator()
+      const oscillator2 = ctx.createOscillator()
+      const gainNode = ctx.createGain()
+      const filter = ctx.createBiquadFilter()
+      
+      oscillator1.connect(filter)
+      oscillator2.connect(filter)
+      filter.connect(gainNode)
+      gainNode.connect(ctx.destination)
+      
+      filter.type = 'lowpass'
+      filter.frequency.setValueAtTime(800, ctx.currentTime)
+      
+      if (open) {
+        // Opening sound - ascending
+        oscillator1.frequency.setValueAtTime(150, ctx.currentTime)
+        oscillator1.frequency.linearRampToValueAtTime(300, ctx.currentTime + 0.3)
+        oscillator2.frequency.setValueAtTime(200, ctx.currentTime)
+        oscillator2.frequency.linearRampToValueAtTime(400, ctx.currentTime + 0.3)
+      } else {
+        // Closing sound - descending
+        oscillator1.frequency.setValueAtTime(300, ctx.currentTime)
+        oscillator1.frequency.linearRampToValueAtTime(150, ctx.currentTime + 0.3)
+        oscillator2.frequency.setValueAtTime(400, ctx.currentTime)
+        oscillator2.frequency.linearRampToValueAtTime(200, ctx.currentTime + 0.3)
+      }
+      
+      oscillator1.type = 'square'
+      oscillator2.type = 'sawtooth'
+      
+      gainNode.gain.setValueAtTime(0.08, ctx.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4)
+      
+      oscillator1.start(ctx.currentTime)
+      oscillator2.start(ctx.currentTime)
+      oscillator1.stop(ctx.currentTime + 0.4)
+      oscillator2.stop(ctx.currentTime + 0.4)
+    } catch {
+      // Audio context might not be available
+    }
+  }, [])
 
   // Play ding sound using Web Audio API
   const playDing = useCallback(() => {
@@ -371,6 +545,9 @@ export default function MusicPlayer() {
 
   // Play specific track with animations
   const playTrack = useCallback((track: typeof ALBUM_DATA.tracks[0]) => {
+    // (4) Play door closing sound
+    playDoorSound(false)
+    
     setDoorsOpen(false)
     setIsFloorChanging(true)
     playDing()
@@ -388,9 +565,11 @@ export default function MusicPlayer() {
       setTimeout(() => {
         setDoorsOpen(true)
         setIsFloorChanging(false)
+        // (4) Play door opening sound
+        playDoorSound(true)
       }, 500)
     }, 300)
-  }, [playDing, showRandomAnnouncement])
+  }, [playDing, showRandomAnnouncement, playDoorSound])
 
   // Play/Pause toggle
   const togglePlay = useCallback(() => {
@@ -525,7 +704,14 @@ export default function MusicPlayer() {
     audioRef.current.currentTime = percent * duration
   }, [duration])
 
+  // (14) Show fact at end of track
   const handleEnded = useCallback(() => {
+    // Show end-of-track fact
+    const newFact = ELEVATOR_FACTS[Math.floor(Math.random() * ELEVATOR_FACTS.length)]
+    setEndFact(newFact)
+    setShowEndFact(true)
+    setTimeout(() => setShowEndFact(false), 4000)
+    
     if (repeatMode === 'one') {
       if (audioRef.current) {
         audioRef.current.currentTime = 0
@@ -572,10 +758,18 @@ export default function MusicPlayer() {
         <div className="absolute inset-0 bg-gradient-to-b from-[#1a1510]/70 via-[#1a1510]/50 to-[#1a1510]/80" />
       </div>
       
+      {/* (3) Audio Visualizer Background */}
+      <div className="fixed bottom-0 left-0 right-0 -z-5 opacity-30 pointer-events-none">
+        <AudioVisualizer isPlaying={isPlaying} />
+      </div>
+      
       {/* Elevator Doors Overlay */}
       <div className="fixed inset-0 -z-5 pointer-events-none">
         <ElevatorDoors isOpening={doorsOpen} />
       </div>
+      
+      {/* (14) End of Track Fact */}
+      <EndOfTrackFact fact={endFact} show={showEndFact} />
       
       {/* Announcement Toast */}
       {showAnnouncement && (
@@ -631,20 +825,12 @@ export default function MusicPlayer() {
               </div>
             </div>
 
-            {/* Now Playing */}
-            <div className="w-full text-center">
-              <div className="flex items-center justify-center gap-3">
-                <span className="text-3xl font-mono font-bold text-amber-400 floor-number">
-                  {String(currentTrack.id).padStart(2, '0')}
-                </span>
-                <div className="text-left">
-                  <h2 className="text-lg font-serif font-semibold text-amber-100 leading-tight">
-                    {currentTrack.title}
-                  </h2>
-                  <p className="text-xs text-amber-400/50">{ALBUM_DATA.artist}</p>
-                </div>
-              </div>
-            </div>
+            {/* (1) Pulsing Floor Display */}
+            <PulsingFloorDisplay floor={currentTrack.id} isPlaying={isPlaying} />
+
+            {/* (2) Retro LCD Display for Track Name */}
+            <RetroLCDDisplay text={currentTrack.title} isPlaying={isPlaying} />
+            <p className="text-xs text-amber-400/50 mt-1">{ALBUM_DATA.artist}</p>
 
             {/* Progress Bar */}
             <div className="w-full mt-4 max-w-sm">

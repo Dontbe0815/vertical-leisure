@@ -126,19 +126,40 @@ function BassBoostButton({ isActive, onToggle }: { isActive: boolean; onToggle: 
 
 // (6) Dust Particles Component
 function DustParticles() {
+  const [particles, setParticles] = useState<Array<{
+    left: number;
+    top: number;
+    delay: number;
+    duration: number;
+    width: number;
+    height: number;
+  }>>([])
+  
+  useEffect(() => {
+    const newParticles = [...Array(30)].map(() => ({
+      left: Math.random() * 100,
+      top: Math.random() * 100,
+      delay: Math.random() * 10,
+      duration: 8 + Math.random() * 12,
+      width: 2 + Math.random() * 3,
+      height: 2 + Math.random() * 3,
+    }))
+    setParticles(newParticles)
+  }, [])
+  
   return (
     <div className="dust-particles-container">
-      {[...Array(30)].map((_, i) => (
+      {particles.map((p, i) => (
         <div
           key={i}
           className="dust-particle"
           style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            animationDelay: `${Math.random() * 10}s`,
-            animationDuration: `${8 + Math.random() * 12}s`,
-            width: `${2 + Math.random() * 3}px`,
-            height: `${2 + Math.random() * 3}px`,
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            animationDelay: `${p.delay}s`,
+            animationDuration: `${p.duration}s`,
+            width: `${p.width}px`,
+            height: `${p.height}px`,
           }}
         />
       ))}
@@ -297,6 +318,17 @@ function AmbientGlow({ isPlaying }: { isPlaying: boolean }) {
 }
 
 function WeatherEffects({ floor }: { floor: number }) {
+  const [raindrops, setRaindrops] = useState<Array<{left: number; delay: number; duration: number}>>([])
+  
+  useEffect(() => {
+    const drops = [...Array(50)].map(() => ({
+      left: Math.random() * 100,
+      delay: Math.random() * 2,
+      duration: 0.5 + Math.random() * 0.5
+    }))
+    setRaindrops(drops)
+  }, [])
+  
   const isRainy = floor <= 5
   const isSunny = floor >= 10
   const isCloudy = floor > 5 && floor < 10
@@ -304,8 +336,8 @@ function WeatherEffects({ floor }: { floor: number }) {
     <div className="weather-effects-container">
       {isRainy && (
         <div className="rain-container">
-          {[...Array(50)].map((_, i) => (
-            <div key={i} className="raindrop" style={{left: `${Math.random() * 100}%`, animationDelay: `${Math.random() * 2}s`, animationDuration: `${0.5 + Math.random() * 0.5}s`}} />
+          {raindrops.map((drop, i) => (
+            <div key={i} className="raindrop" style={{left: `${drop.left}%`, animationDelay: `${drop.delay}s`, animationDuration: `${drop.duration}s`}} />
           ))}
         </div>
       )}
@@ -546,7 +578,7 @@ export default function MusicPlayer() {
   const [playedTracks, setPlayedTracks] = useState<Set<number>>(new Set())
   const [isFloorChanging, setIsFloorChanging] = useState(false)
   const [doorsOpen, setDoorsOpen] = useState(true)
-  const [currentFact, setCurrentFact] = useState(() => ELEVATOR_FACTS[Math.floor(Math.random() * ELEVATOR_FACTS.length)])
+  const [currentFact, setCurrentFact] = useState(ELEVATOR_FACTS[0])
   const [currentAnnouncement, setCurrentAnnouncement] = useState("")
   const [showAnnouncement, setShowAnnouncement] = useState(false)
   const [waitTime, setWaitTime] = useState(0)
@@ -778,7 +810,11 @@ export default function MusicPlayer() {
     return () => { if (waitTimeRef.current) clearInterval(waitTimeRef.current) }
   }, [isPlaying])
 
-  useEffect(() => { const factInterval = setInterval(() => setCurrentFact(ELEVATOR_FACTS[Math.floor(Math.random() * ELEVATOR_FACTS.length)]), 15000); return () => clearInterval(factInterval) }, [])
+  useEffect(() => { 
+    setCurrentFact(ELEVATOR_FACTS[Math.floor(Math.random() * ELEVATOR_FACTS.length)])
+    const factInterval = setInterval(() => setCurrentFact(ELEVATOR_FACTS[Math.floor(Math.random() * ELEVATOR_FACTS.length)]), 15000)
+    return () => clearInterval(factInterval)
+  }, [])
   useEffect(() => { if (audioRef.current) { audioRef.current.src = currentTrack.file; audioRef.current.load(); if (isPlaying) audioRef.current.play().catch(() => {}) } }, [currentTrack, isPlaying])
   useEffect(() => { if (audioRef.current) audioRef.current.volume = normalizedVolume(isEmergencyStop ? 0 : volume) }, [volume, isEmergencyStop, normalizedVolume])
 

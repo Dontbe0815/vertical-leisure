@@ -21,6 +21,13 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.png",
   },
+  manifest: "/manifest.json",
+  themeColor: "#8b7355",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "VERTICAL LEISURE",
+  },
   openGraph: {
     title: "VERTICAL LEISURE",
     description: "Background Music for Important Waiting",

@@ -122,7 +122,6 @@
   }
 }
 
-/* Custom animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-10px); }
@@ -141,18 +140,15 @@
   animation: glow-pulse 2s ease-in-out infinite;
 }
 
-/* Smooth scroll */
 html {
   scroll-behavior: smooth;
 }
 
-/* Selection color */
 ::selection {
   background: rgba(251, 191, 36, 0.3);
   color: #fbbf24;
 }
 
-/* Album player custom styles */
 .album-title {
   text-shadow: 0 0 40px rgba(251, 191, 36, 0.3);
 }
@@ -161,99 +157,280 @@ html {
   text-shadow: 0 0 10px rgba(251, 191, 36, 0.8), 0 0 20px rgba(251, 191, 36, 0.4);
 }
 
-.album-container {
-  perspective: 1000px;
-}
-
-.album-art-container {
-  transform-style: preserve-3d;
-  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.album-front {
-  backface-visibility: hidden;
-}
-
-.album-back {
-  backface-visibility: hidden;
-  transform: rotateY(180deg);
-}
-
-/* Main container */
 .main-container {
   box-shadow: 
     0 0 60px rgba(139, 115, 85, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
-/* Brass frame effect */
-.brass-frame {
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.3),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    inset 1px 0 0 rgba(255, 255, 255, 0.1),
-    inset -1px 0 0 rgba(0, 0, 0, 0.1);
-}
-
-/* ============================================
-   (1) PULSING FLOOR DISPLAY
-   ============================================ */
-.pulsing-floor-display {
+/* FLIP-DIGIT DISPLAY */
+.flip-digit-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 8px 20px;
-  background: linear-gradient(180deg, #0d0804 0%, #1a1008 100%);
-  border: 2px solid #8b7355;
-  border-radius: 8px;
-  margin: 8px 0;
-  box-shadow: 
-    inset 0 2px 4px rgba(0, 0, 0, 0.5),
-    0 0 20px rgba(0, 0, 0, 0.3);
+  margin: 12px 0;
 }
 
-.pulsing-floor-display .floor-number-large {
+.flip-digit-wrapper {
+  display: flex;
+  gap: 4px;
+}
+
+.flip-digit {
+  position: relative;
+  width: 36px;
+  height: 50px;
+  perspective: 200px;
+}
+
+.flip-digit .digit-top,
+.flip-digit .digit-bottom {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  background: linear-gradient(180deg, #1a1008 0%, #0d0804 100%);
+  border: 2px solid #8b7355;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flip-digit .digit-top {
+  top: 0;
+  border-radius: 6px 6px 0 0;
+  border-bottom: 1px solid #8b7355;
+  align-items: flex-end;
+  background: linear-gradient(180deg, #2a1a10 0%, #1a1008 100%);
+}
+
+.flip-digit .digit-bottom {
+  bottom: 0;
+  border-radius: 0 0 6px 6px;
+  border-top: none;
+  align-items: flex-start;
+}
+
+.flip-digit .digit-top span,
+.flip-digit .digit-bottom span {
   font-family: 'Courier New', monospace;
   font-size: 32px;
   font-weight: bold;
-  color: #d4a86a;
-  text-shadow: 
-    0 0 10px rgba(251, 191, 36, 0.5),
-    0 0 20px rgba(251, 191, 36, 0.3);
-  letter-spacing: 4px;
-}
-
-.pulsing-floor-display.active .floor-number-large {
   color: #fbbf24;
-  animation: floorPulse 1.5s ease-in-out infinite;
-  text-shadow: 
-    0 0 15px rgba(251, 191, 36, 0.9),
-    0 0 30px rgba(251, 191, 36, 0.5),
-    0 0 45px rgba(251, 191, 36, 0.3);
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+  height: 50px;
+  line-height: 50px;
 }
 
-.pulsing-floor-display .floor-label {
+.flip-digit .digit-top span {
+  transform: translateY(50%);
+}
+
+.flip-digit .digit-bottom span {
+  transform: translateY(-50%);
+}
+
+.flip-digit .digit-flip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+  transform-origin: bottom;
+  transform-style: preserve-3d;
+}
+
+.flip-digit.flipping .digit-flip {
+  animation: flipDown 0.5s ease-in-out;
+}
+
+.flip-digit .flip-front,
+.flip-digit .flip-back {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, #2a1a10 0%, #1a1008 100%);
+  border: 2px solid #8b7355;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  backface-visibility: hidden;
+}
+
+.flip-digit .flip-front span,
+.flip-digit .flip-back span {
+  font-family: 'Courier New', monospace;
+  font-size: 32px;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 0 10px rgba(251, 191, 36, 0.8);
+  transform: translateY(50%);
+}
+
+@keyframes flipDown {
+  0% { transform: rotateX(0deg); }
+  100% { transform: rotateX(-180deg); }
+}
+
+.floor-label-flip {
   font-family: 'Courier New', monospace;
   font-size: 8px;
   letter-spacing: 4px;
   color: #8b7355;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
-@keyframes floorPulse {
-  0%, 100% { 
-    transform: scale(1);
-    opacity: 1;
-  }
-  50% { 
-    transform: scale(1.05);
-    opacity: 0.8;
-  }
+/* AMBIENT GLOW */
+.ambient-glow-container {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
 }
 
-/* ============================================
-   (2) RETRO LCD DISPLAY
-   ============================================ */
+.glow-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(251, 191, 36, 0.1);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.glow-1 {
+  width: 300px;
+  height: 300px;
+  animation: glowPulse1 4s ease-in-out infinite;
+}
+
+.glow-2 {
+  width: 400px;
+  height: 400px;
+  animation: glowPulse2 4s ease-in-out infinite 0.5s;
+}
+
+.glow-3 {
+  width: 500px;
+  height: 500px;
+  animation: glowPulse3 4s ease-in-out infinite 1s;
+}
+
+.ambient-glow-container.active .glow-ring {
+  border-color: rgba(251, 191, 36, 0.3);
+  box-shadow: 0 0 30px rgba(251, 191, 36, 0.1);
+}
+
+@keyframes glowPulse1 {
+  0%, 100% { opacity: 0.3; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.05); }
+}
+
+@keyframes glowPulse2 {
+  0%, 100% { opacity: 0.2; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.4; transform: translate(-50%, -50%) scale(1.03); }
+}
+
+@keyframes glowPulse3 {
+  0%, 100% { opacity: 0.1; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.3; transform: translate(-50%, -50%) scale(1.02); }
+}
+
+/* WEATHER EFFECTS */
+.weather-effects-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  overflow: hidden;
+}
+
+.rain-container {
+  position: absolute;
+  inset: 0;
+}
+
+.raindrop {
+  position: absolute;
+  top: -20px;
+  width: 2px;
+  height: 15px;
+  background: linear-gradient(to bottom, transparent, rgba(150, 180, 200, 0.4));
+  animation: rainFall linear infinite;
+}
+
+@keyframes rainFall {
+  0% { transform: translateY(-20px); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(100vh); opacity: 0; }
+}
+
+.sun-container {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 300px;
+}
+
+.sun-rays {
+  position: absolute;
+  top: -100px;
+  right: -100px;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(255, 200, 100, 0.3) 0%, transparent 70%);
+  animation: sunPulse 3s ease-in-out infinite;
+}
+
+@keyframes sunPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.clouds-container {
+  position: absolute;
+  inset: 0;
+}
+
+.cloud {
+  position: absolute;
+  background: rgba(200, 200, 200, 0.1);
+  border-radius: 50%;
+  filter: blur(20px);
+}
+
+.cloud-1 {
+  width: 150px;
+  height: 60px;
+  top: 10%;
+  animation: cloudDrift 30s linear infinite;
+}
+
+.cloud-2 {
+  width: 200px;
+  height: 80px;
+  top: 30%;
+  animation: cloudDrift 40s linear infinite 10s;
+}
+
+.cloud-3 {
+  width: 120px;
+  height: 50px;
+  top: 50%;
+  animation: cloudDrift 35s linear infinite 5s;
+}
+
+@keyframes cloudDrift {
+  0% { left: -200px; }
+  100% { left: 100%; }
+}
+
+/* RETRO LCD DISPLAY */
 .retro-lcd-container {
   margin-top: 8px;
 }
@@ -298,15 +475,6 @@ html {
   text-transform: uppercase;
 }
 
-.lcd-text.scrolling {
-  animation: lcdScroll 8s linear infinite;
-}
-
-@keyframes lcdScroll {
-  0%, 20% { transform: translateX(0); }
-  80%, 100% { transform: translateX(-50%); }
-}
-
 .lcd-cursor {
   animation: cursorBlink 0.8s step-end infinite;
 }
@@ -316,23 +484,7 @@ html {
   51%, 100% { opacity: 0; }
 }
 
-/* LCD segment effect */
-.lcd-screen::before {
-  content: 'AAAAAAAAAA';
-  position: absolute;
-  inset: 8px 16px;
-  font-family: 'LCD', 'Courier New', monospace;
-  font-size: 18px;
-  color: rgba(30, 50, 30, 0.3);
-  letter-spacing: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-/* ============================================
-   (3) AUDIO VISUALIZER
-   ============================================ */
+/* AUDIO VISUALIZER */
 .audio-visualizer-container {
   display: flex;
   justify-content: center;
@@ -346,13 +498,7 @@ html {
   opacity: 0.8;
 }
 
-/* ============================================
-   (4) DOOR SOUND - no CSS needed, handled in JS
-   ============================================ */
-
-/* ============================================
-   (14) END OF TRACK FACT DISPLAY
-   ============================================ */
+/* END OF TRACK FACT */
 .end-of-track-fact {
   position: fixed;
   bottom: 20%;
@@ -398,9 +544,7 @@ html {
   50% { transform: scale(1.2); }
 }
 
-/* ============================================
-   ELEVATOR BUTTON STYLES
-   ============================================ */
+/* ELEVATOR BUTTON STYLES */
 .elevator-button {
   position: relative;
   width: 56px;
@@ -541,9 +685,7 @@ html {
   }
 }
 
-/* ============================================
-   HORIZONTAL ELEVATOR VOLUME CONTROL
-   ============================================ */
+/* VOLUME CONTROL */
 .volume-track-container {
   position: relative;
   width: 100%;
@@ -645,18 +787,14 @@ html {
     0 0 12px rgba(251, 191, 36, 0.4);
 }
 
-/* ============================================
-   FLOOR BACKGROUND
-   ============================================ */
+/* FLOOR BACKGROUND */
 .floor-background {
   background-size: cover;
   background-position: center;
   transition: background-image 0.5s ease-in-out;
 }
 
-/* ============================================
-   BUILDING SIDE VIEW
-   ============================================ */
+/* BUILDING SIDE VIEW */
 .building-side-view {
   display: flex;
   flex-direction: column;
@@ -728,9 +866,7 @@ html {
   margin: 0;
 }
 
-/* ============================================
-   ANIMATED FLOOR DISPLAY
-   ============================================ */
+/* ANIMATED FLOOR DISPLAY */
 .animated-floor-display {
   background: rgba(0, 0, 0, 0.7);
   border: 1px solid #8b7355;
@@ -780,9 +916,7 @@ html {
   50% { transform: translateY(-2px); }
 }
 
-/* ============================================
-   ELEVATOR DOORS
-   ============================================ */
+/* ELEVATOR DOORS */
 .elevator-doors-container {
   position: fixed;
   inset: 0;
@@ -826,7 +960,6 @@ html {
   transform: translateX(100%);
 }
 
-/* Door seams */
 .door::after {
   content: '';
   position: absolute;
@@ -843,4 +976,264 @@ html {
 
 .door.right::after {
   left: 20%;
+}
+
+/* SERVICE ELEVATOR MODE */
+.service-elevator-mode {
+  position: fixed;
+  inset: 0;
+  background: #0d0804;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 20px;
+  background: #1a1008;
+  border-bottom: 2px solid #8b7355;
+}
+
+.service-label {
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  letter-spacing: 4px;
+  color: #fbbf24;
+  animation: serviceBlink 1s step-end infinite;
+}
+
+@keyframes serviceBlink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0.5; }
+}
+
+.service-exit {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #8b7355;
+  background: transparent;
+  color: #8b7355;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: all 0.2s;
+}
+
+.service-exit:hover {
+  background: #8b7355;
+  color: #1a1008;
+}
+
+.service-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+}
+
+.service-floor-display {
+  background: #1a1008;
+  border: 4px solid #8b7355;
+  padding: 20px 40px;
+  margin-bottom: 20px;
+}
+
+.service-floor-number {
+  font-family: 'Courier New', monospace;
+  font-size: 80px;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 0 20px rgba(251, 191, 36, 0.8);
+  letter-spacing: 10px;
+}
+
+.service-track-name {
+  font-family: 'Courier New', monospace;
+  font-size: 14px;
+  color: #8b7355;
+  letter-spacing: 2px;
+  margin-bottom: 30px;
+}
+
+.service-controls {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.service-btn {
+  width: 50px;
+  height: 50px;
+  border: 2px solid #8b7355;
+  background: #1a1008;
+  color: #8b7355;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.service-btn:hover {
+  background: #8b7355;
+  color: #0d0804;
+}
+
+.service-btn.main {
+  width: 70px;
+  height: 70px;
+  font-size: 24px;
+  border-width: 3px;
+}
+
+.service-progress {
+  width: 100%;
+  max-width: 300px;
+  height: 4px;
+  background: #1a1008;
+  border: 1px solid #8b7355;
+  margin-bottom: 20px;
+}
+
+.service-progress-fill {
+  height: 100%;
+  background: #fbbf24;
+  transition: width 0.1s;
+}
+
+.service-footer {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 300px;
+  font-family: 'Courier New', monospace;
+  font-size: 10px;
+  color: #8b7355;
+  letter-spacing: 2px;
+}
+
+/* MINI WIDGET PLAYER */
+.mini-widget {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(145deg, #3a2a1a 0%, #2a1a10 100%);
+  border: 2px solid #8b7355;
+  border-radius: 12px;
+  padding: 12px 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  min-width: 280px;
+}
+
+.mini-floor {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(180deg, #1a1008 0%, #0d0804 100%);
+  border: 2px solid #8b7355;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #fbbf24;
+  text-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+}
+
+.mini-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.mini-title {
+  font-family: 'Courier New', monospace;
+  font-size: 11px;
+  color: #fbbf24;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 6px;
+}
+
+.mini-progress {
+  height: 3px;
+  background: #1a1008;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.mini-progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #fbbf24, #d4a86a);
+  transition: width 0.1s;
+}
+
+.mini-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mini-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #8b7355;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mini-btn:hover {
+  color: #fbbf24;
+}
+
+.mini-btn.play {
+  width: 36px;
+  height: 36px;
+  background: #8b7355;
+  border-radius: 50%;
+  color: #1a1008;
+  font-size: 14px;
+}
+
+.mini-btn.play:hover {
+  background: #fbbf24;
+}
+
+.mini-emergency {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #ff4444;
+  background: transparent;
+  color: #ff4444;
+  font-size: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: 4px;
+}
+
+.mini-emergency:hover {
+  background: #ff4444;
+  color: #1a1008;
+}
+
+.mini-emergency.active {
+  background: #ff4444;
+  color: white;
+  animation: emergencyPulse 1s infinite;
+}
+
+@keyframes emergencyPulse {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 68, 68, 0.4); }
+  50% { box-shadow: 0 0 15px rgba(255, 68, 68, 0.8); }
 }
